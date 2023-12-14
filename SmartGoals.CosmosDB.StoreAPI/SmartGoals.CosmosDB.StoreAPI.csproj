@@ -1,0 +1,26 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net7.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="SmartGoals.CosmosDB.Repository\CosmosDbGenericRepository.cs" />
+    <Compile Remove="SmartGoals.CosmosDB.Repository\ICosmosDbGenericRepository.cs" />
+    <Compile Remove="SmartGoals.CosmosDB.StoreServices\IProductService.cs" />
+    <Compile Remove="SmartGoals.CosmosDB.StoreServices\ProductService.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="7.0.4" />
+    <PackageReference Include="Microsoft.Azure.Cosmos" Version="3.37.0" />
+    <PackageReference Include="Swashbuckle.AspNetCore" Version="6.4.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="SmartGoals.CosmosDB.Data\" />
+  </ItemGroup>
+
+</Project>
