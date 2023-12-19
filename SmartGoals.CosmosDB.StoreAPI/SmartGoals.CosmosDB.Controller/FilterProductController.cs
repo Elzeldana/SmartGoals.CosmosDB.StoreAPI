@@ -9,9 +9,11 @@ namespace SmartGoals.CosmosDB.StoreAPI.SmartGoals.CosmosDB.Controller
     public class FilterProductController : ControllerBase
     {
         private readonly IFlterProductRepository _productRepository;
-        public Products(IFilterProductRepository productRepository)
+        public FilterProductController(IFlterProductRepository productRepository)
         {
             _productRepository = productRepository;
         }
+
+
     }
 }

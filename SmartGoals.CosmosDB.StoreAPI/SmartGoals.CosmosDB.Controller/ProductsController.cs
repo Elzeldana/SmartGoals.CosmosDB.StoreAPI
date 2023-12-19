@@ -49,27 +49,34 @@ namespace SmartGoals.CosmosDB.StoreAPI.SmartGoals.CosmosDB.Controller
         /// <param name="product"></param>
         /// <param name="partitionKey"></param>
         /// <returns></returns>
-        [HttpPost]
-        public async Task<ActionResult> UpdateProduct( string id, string partitionKey, UpdateProductRequest product)
-        {
-            if (string.IsNullOrEmpty(id) || string.IsNullOrEmpty(partitionKey))
-            {
-                return BadRequest();
-            }
-            
-            return Ok( await _productRepository.UpdateProductAsync(id, partitionKey, product));
-           
-        }
-        [HttpDelete]
-        public async Task<ActionResult> DeleteProduct(string id, string partitionKey)
-        {
-            if (string.IsNullOrEmpty(id) || string.IsNullOrEmpty(partitionKey))
-            {
-                return BadRequest();
-            }
+        //[HttpPost]
+        //public async Task<ActionResult> UpdateProduct(string id, string partitionKey, UpdateProductRequest product)
+        //{
+        //    if (string.IsNullOrEmpty(id) || string.IsNullOrEmpty(partitionKey))
+        //    {
+        //        return BadRequest();
+        //    }
 
-            await _productRepository.DeleteProductAsync(id, partitionKey);
-            return NoContent();
+        //    return Ok(await _productRepository.UpdateProductAsync(id, partitionKey, product));
+
+        //}
+        //[HttpDelete]
+        //public async Task<ActionResult> DeleteProduct(string id, string partitionKey)
+        //{
+        //    if (string.IsNullOrEmpty(id) || string.IsNullOrEmpty(partitionKey))
+        //    {
+        //        return BadRequest();
+        //    }
+
+        //    await _productRepository.DeleteProductAsync(id, partitionKey);
+        //    return NoContent();
+        //}
+
+        [HttpGet("filterByPrice")]
+        public async Task<IActionResult> FilterByPriceRange(int lower, int upper, int pageSize, int pageNum)
+        {
+            var items = await _productRepository.FilterProductByPriceRange(lower, upper, pageSize, pageNum);
+            return Ok(items);
         }
     }
 
