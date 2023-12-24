@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.DataProtection.KeyManagement;
+﻿using Bogus;
+using Microsoft.AspNetCore.DataProtection.KeyManagement;
 using Microsoft.Azure.Cosmos;
 using Microsoft.Extensions.Logging;
 using SmartGoals.CosmosDB.StoreAPI.Models;
@@ -99,13 +100,12 @@ namespace SmartGoals.CosmosDB.StoreAPI.SmartGoals.CosmosDB.Repository
             try
             {
 
-
                 /// putt limit  !
                 var query = _container.GetItemQueryIterator<Product>(
                     requestOptions: new QueryRequestOptions
                     {
                         MaxItemCount = 10, // Set MaxItemCount to -1 for unlimited results per page
-                      //  MaxConcurrency = -1, // Set MaxConcurrency to -1 for unlimited parallelism
+                                           //  MaxConcurrency = -1, // Set MaxConcurrency to -1 for unlimited parallelism
                     });
 
 
@@ -134,77 +134,134 @@ namespace SmartGoals.CosmosDB.StoreAPI.SmartGoals.CosmosDB.Repository
         /// <param name="id"></param>
         /// <param name="productRequest"></param>
         /// <returns></returns>
-        //public async Task<Product> UpdateProductAsync(string id, string partitionKey, UpdateProductRequest productRequest)
-        //{
-        //    try
-        //    {
-        //        ItemResponse<Product> response = await _container.ReadItemAsync<Product>(id, new PartitionKey(partitionKey));
-        //        Product product = response.Resource;
-        //        product.description = productRequest.Description;
-        //        product.name = productRequest.Name;
-        //        product.tags = productRequest.Tags;
 
-        //        await _container.UpsertItemAsync(product, new PartitionKey(partitionKey));
+        public async Task CreateProductAsync(CreateProductRequest request)
+        {
+            try
+            {
+                Product product = new()
+                {
+                    Id = Guid.NewGuid(),
+                    CategoryId = request.CategoryId,
+                    CategoryName = request.CategoryName,
+                    Description = request.Description,
+                    Name = request.Name,
+                    Price = request.Price,
+                    Sku = request.Sku,
+                    Tags = request.Tags,
+
+                };
+
+                await _container.CreateItemAsync(product, new PartitionKey(request.CategoryId));
+            }
+            catch (CosmosException cosmosEx) when (cosmosEx.StatusCode == System.Net.HttpStatusCode.BadRequest)
+            {
+                _logger.LogError($"Cosmos DB BadRequest: {cosmosEx.Message}");
+                throw;
+                // Optionally handle the exception, e.g., return an error response to the caller
+            }
+            catch (CosmosException cosmosEx) when (cosmosEx.StatusCode == System.Net.HttpStatusCode.NotFound)
+            {
+                _logger.LogError($"Cosmos DB NotFound: {cosmosEx.Message}");
+                throw;
+            }
+            catch (CosmosException cosmosEx) when (cosmosEx.StatusCode == System.Net.HttpStatusCode.Conflict)
+            {
+                _logger.LogError($"Cosmos DB Conflict: {cosmosEx.Message}");
+                throw;
+
+            }
+            catch (CosmosException cosmosEx)
+            {
+                _logger.LogError($"Cosmos DB operation failed: {cosmosEx.Message}");
+                throw;
+
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"Failed to create product: {ex.Message}");
+                throw;
+
+            }
 
 
-        //        // check to delete partition key. 
+        }
 
-        //        return product;
-        //    }
+        public async Task<Product> UpdateProductAsync(string id, string partitionKey, UpdateProductRequest productRequest)
+        {
+            try
+            {
+                ItemResponse<Product> response = await _container.ReadItemAsync<Product>(id, new PartitionKey(partitionKey));
+                Product product = response.Resource;
+                product.Description = productRequest.Description;
+                product.Name = productRequest.Name;
+                product.Tags = productRequest.Tags;
+                product.Sku = productRequest.Sku;
+                product.Price = productRequest.Price;
+                //  await _container.ReplaceItemAsync<Product>(product, product.Id.ToString(), new PartitionKey(partitionKey));
 
-        //    catch (CosmosException cosmosEx) when (cosmosEx.StatusCode == System.Net.HttpStatusCode.NotFound)
-        //    {
-        //        _logger.LogError(cosmosEx, "Product with ID {Id} not found.", id);
-        //        throw;
-        //    }
-        //    catch (CosmosException cosmosEx)
-        //    {
-        //        _logger.LogError(cosmosEx, "Cosmos DB exception while updating product with ID {Id}.", id);
-        //        throw;
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        _logger.LogError(ex, "Error occurred while updating product with ID {Id}.", id);
-        //        throw;
-        //    }
+                await _container.UpsertItemAsync(product);
 
 
-        //}
+
+                // check to delete partition key. 
+
+                return product;
+            }
+
+            catch (CosmosException cosmosEx) when (cosmosEx.StatusCode == System.Net.HttpStatusCode.NotFound)
+            {
+                _logger.LogError(cosmosEx, "Product with ID {Id} not found.", id);
+                throw;
+            }
+            catch (CosmosException cosmosEx)
+            {
+                _logger.LogError(cosmosEx, "Cosmos DB exception while updating product with ID {Id}.", id);
+                throw;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred while updating product with ID {Id}.", id);
+                throw;
+            }
+
+
+        }
         /// <summary>
         /// 
         /// </summary>
-        /// <param name="id"></param>
-        /// <param name="partitionKey"></param>
+        /// <param name = "id" ></ param >
+        /// < param name="partitionKey"></param>
         /// <returns></returns>
-        //public async Task DeleteProductAsync(string id, string partitionKey)
-        //{
-        //    try
-        //    {
-        //        ItemResponse<Product> response = await _container.ReadItemAsync<Product>(id, new PartitionKey(partitionKey));
-        //        var product = response.Resource;
+        public async Task DeleteProductAsync(string id, string partitionKey)
+        {
+            try
+            {
+                ItemResponse<Product> response = await _container.ReadItemAsync<Product>(id, new PartitionKey(partitionKey));
+                var product = response.Resource;
 
-        //        await _container.DeleteItemAsync<Product>(product.id, new PartitionKey(partitionKey));
-        //        _logger.LogInformation($"Product with ID: {id} deleted successfully.");
-        //    }
-        //    catch (CosmosException cosmosEx) when (cosmosEx.StatusCode == System.Net.HttpStatusCode.NotFound)
-        //    {
-        //        _logger.LogWarning($"Product with ID: {id} not found.");
-        //        throw;
-        //    }
-        //    catch (CosmosException cosmosEx)
-        //    {
-        //        _logger.LogError(cosmosEx, $"Cosmos DB exception while deleting product with ID: {id}.");
-        //        throw;
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        _logger.LogError(ex, $"Error occurred while deleting product with ID: {id}.");
-        //        throw;
-        //    }
+                await _container.DeleteItemAsync<Product>(product.Id.ToString(), new PartitionKey(partitionKey));
+                _logger.LogInformation($"Product with ID: {id} deleted successfully.");
+            }
+            catch (CosmosException cosmosEx) when (cosmosEx.StatusCode == System.Net.HttpStatusCode.NotFound)
+            {
+                _logger.LogWarning($"Product with ID: {id} not found.");
+                throw;
+            }
+            catch (CosmosException cosmosEx)
+            {
+                _logger.LogError(cosmosEx, $"Cosmos DB exception while deleting product with ID: {id}.");
+                throw;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error occurred while deleting product with ID: {id}.");
+                throw;
+            }
 
-        //}
+        }
 
-        public async Task<List<ProductByPriceResponse>> FilterProductByPriceRange( int lower, int upper, int pageSize, int pageNum)
+        public async Task<List<ProductByPriceResponse>> FilterProductByPriceRange(int lower, int upper, int pageSize, int pageNum)
         {
             try
             {
@@ -234,52 +291,28 @@ namespace SmartGoals.CosmosDB.StoreAPI.SmartGoals.CosmosDB.Repository
                     {
                         ProductByPriceResponse res = new ProductByPriceResponse
                         {
+                            CategoryId = product.CategoryId,
+                            CategoryName = product.CategoryName,
+                            Price = product.Price,
+                            Description = product.Description,
                             Name = product.Name,
-                            Price = product.Price
+                            Sku = product.Sku,
+                            Tags = product.Tags,
+                            Id = product.Id,
                         };
                         productList.Add(res);
                     }
                 }
                 return productList;
 
-                // QueryRequestOptions options = new() { MaxItemCount = pageSize };
 
-                //string sql = "SELECT p.name  FROM products p  WHERE p.price >= @lower AND p.price <= @upper";
-
-                // QueryDefinition query = new QueryDefinition(sql)
-                //     .WithParameter("@lower", lower)
-                //     .WithParameter("@upper", upper);
-
-                // List<ProductByPriceResponse> productList = new List<ProductByPriceResponse>();
-                // FeedIterator<dynamic> resultSetIterator = _container.GetItemQueryIterator<dynamic>(
-                //     query,
-                //     requestOptions: options);
-
-                // while (resultSetIterator.HasMoreResults)
-                // {
-                //     FeedResponse<dynamic> response = await resultSetIterator.ReadNextAsync();
-
-
-                //     foreach (var item in response)
-                //     {
-                //         Console.WriteLine(item);
-                //         ProductByPriceResponse product = new ProductByPriceResponse
-                //         {
-                //             Name = item.name,                          
-                //             Price = item.price
-                //         };
-                //         productList.Add(product);
-                //     }
-                // }
-
-                // return productList;
             }
 
 
             catch (CosmosException ex)
             {
                 _logger.LogError(ex, "Cosmos DB error occurred: {Message}", ex.Message);
-                throw; 
+                throw;
             }
             catch (Exception ex)
             {
@@ -287,9 +320,74 @@ namespace SmartGoals.CosmosDB.StoreAPI.SmartGoals.CosmosDB.Repository
                 throw;
             }
         }
-    }
 
+        public async Task ProcessBulkProducts()
+        {
+            try
+            {
+                CosmosClientOptions options = new()
+                {
+                    AllowBulkExecution = true
+                };
+
+
+                List<Product> productsToInsert = new Faker<Product>()
+                    .StrictMode(true)
+                    .RuleFor(p => p.Id, f => Guid.NewGuid())
+                .RuleFor(p => p.CategoryId, f => f.Random.AlphaNumeric(5))
+                .RuleFor(p => p.CategoryName, f => f.Commerce.Categories(1)[0])
+                .RuleFor(p => p.Sku, f => f.Commerce.Ean13())
+                .RuleFor(p => p.Name, f => f.Commerce.ProductName())
+                .RuleFor(p => p.Description, f => f.Lorem.Sentence())
+                .RuleFor(p => p.Price, f => f.Random.Double(10, 1000))
+                .RuleFor(p => p.Tags, f => new List<Tag>
+                {
+                new Tag { Id = f.Random.AlphaNumeric(5), Name = f.Commerce.Department(1) },
+                new Tag { Id = f.Random.AlphaNumeric(5), Name = f.Commerce.Department(1) }
+                }).Generate(100);
+
+                List<Task> concurrentTasks = new List<Task>();
+
+                foreach (Product product in productsToInsert)
+                {
+                    _logger.LogInformation($"{product.Id}, {product.Name}");
+                    concurrentTasks.Add(
+                        _container.CreateItemAsync(product, new PartitionKey(product.CategoryId))
+                            .ContinueWith(task =>
+                            {
+                                if (task.IsFaulted && task.Exception != null)
+                                {
+                                    foreach (var ex in task.Exception.InnerExceptions)
+                                    {
+                                        _logger.LogError(ex, $"Cosmos DB Insertion Error {product.Id}");
+                                    }
+                                }
+                            })
+                    );
+                }
+
+                await Task.WhenAll(concurrentTasks);
+
+                _logger.LogInformation("Bulk tasks complete");
+            }
+
+            catch (CosmosException cosmosException)
+            {
+                _logger.LogError(cosmosException, $"Cosmos DB Exception: Status code {cosmosException.StatusCode} Message: {cosmosException.Message}");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"General Exception: {ex.Message}");
+            }
+        }
+    }
 }
+
+ 
+
+
+
+
 
 
 
