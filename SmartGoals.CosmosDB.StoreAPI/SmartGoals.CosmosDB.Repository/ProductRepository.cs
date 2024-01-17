@@ -35,8 +35,6 @@ namespace SmartGoals.CosmosDB.StoreAPI.SmartGoals.CosmosDB.Repository
         /// </summary>
         /// <param name="id"></param>
         /// <param name="partitionId"></param>
-        /// <param name="databaseId"></param>
-        /// <param name="containerId"></param>
         /// <returns></returns>
         public async Task<Product> GetItemAsync(string id, string partitionId)
         {
@@ -151,7 +149,6 @@ namespace SmartGoals.CosmosDB.StoreAPI.SmartGoals.CosmosDB.Repository
                     Tags = request.Tags,
 
                 };
-
                 await _container.CreateItemAsync(product, new PartitionKey(request.CategoryId));
             }
             catch (CosmosException cosmosEx) when (cosmosEx.StatusCode == System.Net.HttpStatusCode.BadRequest)
@@ -186,6 +183,13 @@ namespace SmartGoals.CosmosDB.StoreAPI.SmartGoals.CosmosDB.Repository
 
 
         }
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="id"></param>
+        /// <param name="partitionKey"></param>
+        /// <param name="productRequest"></param>
+        /// <returns></returns>
 
         public async Task<Product> UpdateProductAsync(string id, string partitionKey, UpdateProductRequest productRequest)
         {
@@ -194,17 +198,14 @@ namespace SmartGoals.CosmosDB.StoreAPI.SmartGoals.CosmosDB.Repository
                 ItemResponse<Product> response = await _container.ReadItemAsync<Product>(id, new PartitionKey(partitionKey));
                 Product product = response.Resource;
                 product.Description = productRequest.Description;
+             //   product.CategoryId = "00000000000000000";
                 product.Name = productRequest.Name;
                 product.Tags = productRequest.Tags;
                 product.Sku = productRequest.Sku;
                 product.Price = productRequest.Price;
-                //  await _container.ReplaceItemAsync<Product>(product, product.Id.ToString(), new PartitionKey(partitionKey));
+               // await _container.ReplaceItemAsync<Product>(product, product.Id.ToString(), new PartitionKey(partitionKey));
 
                 await _container.UpsertItemAsync(product);
-
-
-
-                // check to delete partition key. 
 
                 return product;
             }
@@ -269,7 +270,7 @@ namespace SmartGoals.CosmosDB.StoreAPI.SmartGoals.CosmosDB.Repository
                 options.MaxItemCount = pageSize;
                 options.MaxBufferedItemCount = pageSize;
 
-                string sql = "SELECT p.name  FROM products p  WHERE p.price >= @lower AND p.price <= @upper";
+                string sql = "SELECT * FROM products p  WHERE p.price >= @lower AND p.price <= @upper";
                 QueryDefinition query = new QueryDefinition(sql)
                      .WithParameter("@lower", lower)
                      .WithParameter("@upper", upper);
@@ -325,11 +326,11 @@ namespace SmartGoals.CosmosDB.StoreAPI.SmartGoals.CosmosDB.Repository
         {
             try
             {
+
                 CosmosClientOptions options = new()
                 {
                     AllowBulkExecution = true
                 };
-
 
                 List<Product> productsToInsert = new Faker<Product>()
                     .StrictMode(true)
