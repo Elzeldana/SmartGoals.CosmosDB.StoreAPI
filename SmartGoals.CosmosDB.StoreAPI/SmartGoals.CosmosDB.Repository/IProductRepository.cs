@@ -12,7 +12,7 @@ namespace SmartGoals.CosmosDB.StoreAPI.SmartGoals.CosmosDB.Repository
         Task<Product> UpdateProductAsync(string id, string partitionKey, UpdateProductRequest productRequest);
         Task DeleteProductAsync(string id, string partitionKey);
         Task<List<ProductByPriceResponse>> FilterProductByPriceRange(int lower, int upper, int pageSize, int pageNum);
-        Task CreateProductAsync(CreateProductRequest request);
+        Task<Product> CreateProductAsync(CreateProductRequest request);
         Task ProcessBulkProducts();
 
 

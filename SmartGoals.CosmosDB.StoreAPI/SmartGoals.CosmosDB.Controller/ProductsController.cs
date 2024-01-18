@@ -35,8 +35,8 @@ namespace SmartGoals.CosmosDB.StoreAPI.SmartGoals.CosmosDB.Controller
         [HttpPost]
         public async Task<ActionResult> CreateProduct(CreateProductRequest createProductRequest)
         {
-           await _productRepository.CreateProductAsync(createProductRequest);
-            return Ok();
+          var product =  await _productRepository.CreateProductAsync(createProductRequest);
+            return Ok(product);
 
         }
         /// <summary>

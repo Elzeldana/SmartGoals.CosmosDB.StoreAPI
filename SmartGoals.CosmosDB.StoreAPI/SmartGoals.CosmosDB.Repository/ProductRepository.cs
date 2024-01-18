@@ -132,8 +132,8 @@ namespace SmartGoals.CosmosDB.StoreAPI.SmartGoals.CosmosDB.Repository
         /// <param name="id"></param>
         /// <param name="productRequest"></param>
         /// <returns></returns>
-
-        public async Task CreateProductAsync(CreateProductRequest request)
+        
+        public async  Task<Product> CreateProductAsync(CreateProductRequest request)
         {
             try
             {
@@ -150,6 +150,7 @@ namespace SmartGoals.CosmosDB.StoreAPI.SmartGoals.CosmosDB.Repository
 
                 };
                 await _container.CreateItemAsync(product, new PartitionKey(request.CategoryId));
+                return product;
             }
             catch (CosmosException cosmosEx) when (cosmosEx.StatusCode == System.Net.HttpStatusCode.BadRequest)
             {
@@ -198,14 +199,14 @@ namespace SmartGoals.CosmosDB.StoreAPI.SmartGoals.CosmosDB.Repository
                 ItemResponse<Product> response = await _container.ReadItemAsync<Product>(id, new PartitionKey(partitionKey));
                 Product product = response.Resource;
                 product.Description = productRequest.Description;
-             //   product.CategoryId = "00000000000000000";
+                product.CategoryId = "00000000000442000000";
                 product.Name = productRequest.Name;
                 product.Tags = productRequest.Tags;
                 product.Sku = productRequest.Sku;
                 product.Price = productRequest.Price;
-               // await _container.ReplaceItemAsync<Product>(product, product.Id.ToString(), new PartitionKey(partitionKey));
+               await _container.ReplaceItemAsync<Product>(product, product.Id.ToString(), new PartitionKey(partitionKey));
 
-                await _container.UpsertItemAsync(product);
+               // await _container.UpsertItemAsync(product);
 
                 return product;
             }
@@ -345,7 +346,7 @@ namespace SmartGoals.CosmosDB.StoreAPI.SmartGoals.CosmosDB.Repository
                 {
                 new Tag { Id = f.Random.AlphaNumeric(5), Name = f.Commerce.Department(1) },
                 new Tag { Id = f.Random.AlphaNumeric(5), Name = f.Commerce.Department(1) }
-                }).Generate(100);
+                }).Generate(10000);
 
                 List<Task> concurrentTasks = new List<Task>();
 
